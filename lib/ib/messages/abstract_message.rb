@@ -34,9 +34,9 @@ module IB
         self.class.message_id
       end
 
-			def request_id
-				@data[:request_id].presence || nil
-			end
+      def request_id
+        @data[:request_id].presence || nil
+      end
 
       def message_type
         self.class.message_type
@@ -44,9 +44,9 @@ module IB
 
       attr_accessor :created_at, :data
 
-			def self.properties?
-				@given_arguments
-			end
+      def self.properties?
+        @given_arguments
+      end
 
 
       def to_human
@@ -65,7 +65,7 @@ module IB
     #   data_map contains instructions for processing @data Hash. Format:
     #      Incoming messages: [field, type] or [group, field, type]
     #      Outgoing messages: field, [field, default] or [field, method, [args]]
-    def def_message message_id_version, *data_map, &to_human
+    def def_message(message_id_version, *data_map, &to_human)
       base = data_map.first.is_a?(Class) ? data_map.shift : self::AbstractMessage
       message_id, version = message_id_version
 
@@ -73,17 +73,21 @@ module IB
       message_class = Class.new(base) do
         @message_id, @version = message_id, version || 1
         @data_map = data_map
-				@given_arguments =[]
+        @given_arguments =[]
+
+        # if [message_id, version] == [10, 5]
+        #   require 'pry'; binding.pry
+        # end
 
         @data_map.each do |(name, _, type_args)|
-					dont_process = name == :request_id # [ :request_id, :local_id, :id ].include? name.to_sym 
-					@given_arguments << name.to_sym
+          dont_process = name == :request_id # [ :request_id, :local_id, :id ].include? name.to_sym
+          @given_arguments << name.to_sym
           # Avoid redefining existing accessor methods
           unless instance_methods.include?(name.to_s) || instance_methods.include?(name.to_sym) || dont_process
             if type_args.is_a?(Symbol) # This is Incoming with [group, field, type]
               attr_reader name
             else
-              define_method(name) { @data[name] } 
+              define_method(name) { @data[name] }
             end
           end
         end

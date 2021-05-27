@@ -1,16 +1,7 @@
 require 'models/ib/contract_detail'
 require 'models/ib/underlying'
 
-
-
 module IB
-
-  if defined?(Contract) 
-		#Connection.current.logger.warn "Contract already a #{defined?(Contract)}"
-
-#		puts Contract.ancestors
-#		IB.send(:remove_const, 'Contract')
-	end
   class Contract <  IB::Model
     include BaseProperties
 
@@ -43,7 +34,7 @@ module IB
       :strike => :f, # double: The strike price.
       :expiry => :s, # The expiration date. Use the format YYYYMM or YYYYMMDD
       :last_trading_day =>  :s, # the tws returns the last trading day in Format YYYYMMMDD hh:mm
-				# which may differ from the expiry 
+        # which may differ from the expiry 
       :exchange => :sup, # The order destination, such as Smart.
       :primary_exchange => :sup, # Non-SMART exchange where the contract trades.
       :include_expired => :bool, # When true, contract details requests and historical
@@ -76,9 +67,9 @@ module IB
     attr_accessor :description # NB: local to ib, not part of TWS.
 
     ### Associations
-		has_many :misc   # multi purpose association
+    has_many :misc   # multi purpose association
     has_many :orders # Placed for this Contract
-		has_many :portfolio_values
+    has_many :portfolio_values
 
     has_many :bars # Possibly representing trading history for this Contract
 
@@ -135,17 +126,18 @@ module IB
 #    
 #    18/1/18: serialise always includes conid
 
+    # serialize :option, :trading_class,  *fields
     def serialize *fields  # :nodoc:
       print_default = ->(field, default="") { field.blank? ? default : field }
-      [(con_id.present? && !con_id.is_a?(Symbol) && con_id.to_i > 0 ? con_id : ""),
+      [(con_id.present? && !con_id.is_a?(Symbol) ? con_id : ""),
        print_default[symbol],
        print_default[self[:sec_type]],
        ( fields.include?(:option) ?
        [ print_default[expiry], 
-			##  a Zero-Strike-Option  has to be defined with  «strike: -1 »
-				 strike.present? && ( strike.is_a?(Numeric) && !strike.zero? && strike > 0 )  ?  strike : strike<0 ?  0 : "",
-				 print_default[self[:right]], 
-				 print_default[multiplier]] : nil ),
+      ##  a Zero-Strike-Option  has to be defined with  «strike: -1 »
+         strike.present? && ( strike.is_a?(Numeric) && !strike.zero? && strike > 0 )  ?  strike : strike<0 ?  0 : "",
+         print_default[self[:right]], 
+         print_default[multiplier]] : nil ),
        print_default[exchange],
        ( fields.include?(:primary_exchange) ? print_default[primary_exchange]   : nil ) ,
        print_default[currency],
@@ -170,9 +162,9 @@ module IB
     def serialize_short *fields  # :nodoc:
       serialize :option, :trading_class, :primary_exchange, *fields
     end
-	
-		# same as :serialize_short, omitting primary_exchange
-			# used by      RequestMarketDepth 
+
+    # same as :serialize_short, omitting primary_exchange
+      # used by      RequestMarketDepth
     def serialize_supershort *fields  # :nodoc:
       serialize :option, :trading_class,  *fields
     end
@@ -212,16 +204,16 @@ module IB
       serialize_long.join(":")
     end
 
-		# extracts essential attributes of the contract, 
-		# and returns a new contract.
-		# 
-		# the link to contract-details is __not__ maintained.
-		def  essential
+    # extracts essential attributes of the contract, 
+    # and returns a new contract.
+    # 
+    # the link to contract-details is __not__ maintained.
+    def  essential
 
-			the_attributes = [ :sec_type, :symbol , :con_id,   :exchange, :right, 
-									  :currency, :expiry,  :strike,   :local_symbol, :last_trading_day,
-								:multiplier,  :primary_exchange, :trading_class, :description ]
-			new_contract= self.class.new invariant_attributes.select{|k,_| the_attributes.include? k }.compact
+      the_attributes = [ :sec_type, :symbol , :con_id,   :exchange, :right, 
+                    :currency, :expiry,  :strike,   :local_symbol, :last_trading_day,
+                :multiplier,  :primary_exchange, :trading_class, :description ]
+      new_contract= self.class.new invariant_attributes.select{|k,_| the_attributes.include? k }.compact
       new_contract[:description] = if @description.present? 
                                      @description 
                                    elsif contract_detail.present?
@@ -230,23 +222,23 @@ module IB
                                      ""
                                    end
       new_contract # return contract
-		end
+    end
 
 
-		# creates a new Contract substituting attributes by the provided key-value pairs.
-		#
-		# con_id is resetted
-		def merge **new_attributes
-			self.con_id =  0
-			self.class.new attributes.merge new_attributes
-		end
+    # creates a new Contract substituting attributes by the provided key-value pairs.
+    #
+    # con_id is resetted
+    def merge **new_attributes
+      self.con_id =  0
+      self.class.new attributes.merge new_attributes
+    end
 
     # Contract comparison
 
     def == other  # :nodoc: 
-			return false if !other.is_a?(Contract)
+      return false if !other.is_a?(Contract)
       return true if super(other)
-			return true if !con_id.to_i.zero?  && con_id == other.con_id
+      return true if !con_id.to_i.zero?  && con_id == other.con_id
 
       return false unless other.is_a?(self.class)
 
@@ -309,13 +301,13 @@ module IB
       "#{symbol}# {exchange}# {currency}"
       elsif expiry.present?
       "#{symbol}(#{strike}) #{right} #{expiry} /#{exchange}/#{currency}"
-			else
+      else
       "#{symbol}(#{strike}) #{right} #{last_trading_day} /#{exchange}/#{currency}"
       end
     end
     # Testing for type of contract:
-		# depreciated :  use is_a?(IB::Stock, IB::Bond, IB::Bag etc) instead
-		def bag?  #  :nodoc:
+    # depreciated :  use is_a?(IB::Stock, IB::Bond, IB::Bag etc) instead
+    def bag?  #  :nodoc:
       self[:sec_type] == 'BAG'
     end
 
@@ -339,10 +331,13 @@ module IB
       self[:sec_type] == 'IND'
     end
 
+    def last_trade_date_or_contract_month
+      nil
+    end
 
-		def verify  # :nodoc:
-			error "verify must be overloaded. Please require at least `ib/verify` from the `ib-extenstions` gem "
-		end
+    def verify  # :nodoc:
+      error "verify must be overloaded. Please require at least `ib/verify` from the `ib-extenstions` gem "
+    end
 =begin
 From the release notes of TWS 9.50
 
@@ -362,25 +357,25 @@ In places where these terms are used to indicate a concept, we have left them as
 # However, after querying a contract, 'expiry' ist overwritten by 'last_trading_day'. The original 'expiry'
 # is still available through 'attributes[:expiry]'
 
-		def expiry
-			if self.last_trading_day.present?
-				last_trading_day.gsub(/-/,'')
-			else
-				@attributes[:expiry]
-			end
-		end
+    def expiry
+      if self.last_trading_day.present?
+        last_trading_day.gsub(/-/,'')
+      else
+        @attributes[:expiry]
+      end
+    end
 
-		
+    
 # is read by Account#PlaceOrder to set requirements for contract-types, as NonGuaranteed for stock-spreads
-		def order_requirements
-			Hash.new
-		end
+    def order_requirements
+      Hash.new
+    end
 
   end # class Contract
 
 
   ### Now let's deal with Contract subclasses
-	begin
+  begin
 
   require_relative 'option'
   require 'models/ib/bag'
@@ -388,14 +383,14 @@ In places where these terms are used to indicate a concept, we have left them as
   require 'models/ib/future'
   require 'models/ib/stock'
   require 'models/ib/index'
-	### walkaraound to enable spreads with orientdb 
-	if IB::const_defined? :Spread
-		IB::send(:remove_const, :Spread)
-		#puts "Spread already defined"
-		#puts "erasing"
+  ### walkaraound to enable spreads with orientdb 
+  if IB::const_defined? :Spread
+    IB::send(:remove_const, :Spread)
+    #puts "Spread already defined"
+    #puts "erasing"
   end
   require 'models/ib/spread.rb'
-	end
+  end
 
 
 
