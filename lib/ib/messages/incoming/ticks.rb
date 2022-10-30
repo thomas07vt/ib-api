@@ -1,4 +1,7 @@
 # All message classes related to ticks located here
+# HISTORICAL_TICKS          = 96
+# HISTORICAL_TICKS_BID_ASK  = 97
+# HISTORICAL_TICKS_LAST     = 98
 module IB
   module Messages
     module Incoming
