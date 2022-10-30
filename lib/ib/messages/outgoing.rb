@@ -334,6 +334,7 @@ module IB
       require 'ib/messages/outgoing/request_marketdata'
       require 'ib/messages/outgoing/request_market_depth'
       require 'ib/messages/outgoing/request_tick_data'
+      require 'ib/messages/outgoing/request_historical_tick_data'
 
     end # module Outgoing
   end # module Messages

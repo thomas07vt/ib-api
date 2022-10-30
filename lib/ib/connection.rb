@@ -180,10 +180,8 @@ module IB
             when what.is_a?(Symbol)
               if Messages::Incoming.const_defined?(what)
                 [Messages::Incoming.const_get(what)]
-              elsif TechnicalAnalysis::Signals.const_defined?(what)
-                [TechnicalAnalysis::Signals.const_get?(what)]
               else
-                error "#{what} is no IB::Messages or TechnicalAnalyis::Signals class"
+                error "#{what} is no IB::Messages"
               end
             when what.is_a?(Regexp)
               Messages::Incoming::Classes.values.find_all { |klass| klass.to_s =~ what }
