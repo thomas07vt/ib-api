@@ -74,7 +74,7 @@ module IB
 
           [
             self.class.message_id,
-            self.class.version,
+            # self.class.version,
             @data[:request_id],
             contract.con_id,
             contract.symbol,
@@ -97,6 +97,10 @@ module IB
             @data[:ignore_size],
             ""
           ]
+
+          # 96-18001-0-AAPL-STK--0.0---SMART--USD---0-20220712 21:39:33 US/Eastern--10-TRADES-1-1--
+          # 96-1667139865-0-AAPL-STK--0.0---SMART--USD---0-20220712 21:39:33 US/Eastern--10-TRADES-1-1--
+          # [96, 1, 1667139633, 0, "AAPL", "STK", nil, 0.0, "", nil, "SMART", nil, "USD", "", "", 0, "20220712 21:39:33 US/Eastern", "", 10, "TRADES", 1, 1, ""]
         end
       end
     end

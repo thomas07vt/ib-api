@@ -16,11 +16,11 @@ module IB
               end.compact.join('",') + " >"
         end
 
-				def the_data
-					@data.reject{|k,_| [:version, :ticker_id].include? k }
-				end
-			end	
-				
+        def the_data
+          @data.reject{|k,_| [:version, :ticker_id].include? k }
+        end
+      end  
+        
 
       # The IB code seems to dispatch up to two wrapped objects for this message, a tickPrice
       # and sometimes a tickSize, which seems to be identical to the TICK_SIZE object.
@@ -69,11 +69,11 @@ module IB
                               [:price, :float],
                               [:size, :int],
                               [:can_auto_execute, :int]
-			class TickPrice
-				def valid?
-				super &&	!price.zero?
-				end
-			end
+      class TickPrice
+        def valid?
+        super &&  !price.zero?
+        end
+      end
 
       TickSize = def_message [2, 6], AbstractTick,
                              [:ticker_id, :int],
@@ -121,109 +121,109 @@ module IB
                       [:tick_type, :int],
                       #                       What is the "not yet computed" indicator:
                       [:implied_volatility, :decimal_limit_1], # -1 and below
-                      [:delta, :decimal_limit_2],					#      -2 and below
-                      [:option_price, :decimal_limit_1],	#      -1   -"-
-                      [:pv_dividend, :decimal_limit_1],		#      -1   -"-
-                      [:gamma, :decimal_limit_2],					#      -2   -"-
-                      [:vega, :decimal_limit_2],					#      -2   -"-
-                      [:theta, :decimal_limit_2],					#      -2   -"-
+                      [:delta, :decimal_limit_2],          #      -2 and below
+                      [:option_price, :decimal_limit_1],  #      -1   -"-
+                      [:pv_dividend, :decimal_limit_1],    #      -1   -"-
+                      [:gamma, :decimal_limit_2],          #      -2   -"-
+                      [:vega, :decimal_limit_2],          #      -2   -"-
+                      [:theta, :decimal_limit_2],          #      -2   -"-
                       [:under_price, :decimal_limit_1]) do
 
             "<TickOption #{type}   " + 
                 "option @ #{"%8.3f" % (option_price || -1)}, IV: #{"%4.3f" % (implied_volatility || -1)}, " +
-						    "delta: #{"%5.3f" % (delta || -1)}, " +
+                "delta: #{"%5.3f" % (delta || -1)}, " +
                 "gamma: #{"%6.4f" % (gamma || -1)}, vega: #{ "%6.5f" % (vega || -1)}, " + 
-								"theta: #{"%7.6f" % (theta || -1)}, pv_dividend: #{"%5.3f" % (pv_dividend || -1)}, " +
-							  "underlying @ #{"% 8.3f" % (under_price || -1)} >"
+                "theta: #{"%7.6f" % (theta || -1)}, pv_dividend: #{"%5.3f" % (pv_dividend || -1)}, " +
+                "underlying @ #{"% 8.3f" % (under_price || -1)} >"
           end
 
-			 class TickOption		
-				 def greeks
-					 { delta: delta, gamma: gamma, vega: vega, theta: theta }
-				 end
+       class TickOption    
+         def greeks
+           { delta: delta, gamma: gamma, vega: vega, theta: theta }
+         end
 
-				 def iv
-					 implied_volatility
-				 end
-			
-				 
-				 def greeks? 
-					 greeks.values.any? &:present?
-				 end
+         def iv
+           implied_volatility
+         end
+      
+         
+         def greeks? 
+           greeks.values.any? &:present?
+         end
 
-			 end
+       end
 
       TickSnapshotEnd = def_message 57, [:ticker_id, :int]
 
-			TickByTick =  def_message [99, 0], [:ticker_id, :int ],
-			[ :tick_type, :int],
-			[ :time, :int_date ]
+      TickByTick =  def_message [99, 0], [:ticker_id, :int ],
+      [ :tick_type, :int],
+      [ :time, :int_date ]
 
-			## error messages: (10189) "Failed to request tick-by-tick data:Historical data request pacing violation"
-			#  
-			class TickByTick
-				using IBSupport  # extended Array-Class  from abstract_message
-				
-				def resolve_mask
-					@data[:mask].present? ? [ @data[:mask] & 1 , @data[:mask] & 2  ] : [] 
-				end
+      ## error messages: (10189) "Failed to request tick-by-tick data:Historical data request pacing violation"
+      #  
+      class TickByTick
+        using IBSupport  # extended Array-Class  from abstract_message
+        
+        def resolve_mask
+          @data[:mask].present? ? [ @data[:mask] & 1 , @data[:mask] & 2  ] : [] 
+        end
 
-				def load
-					super
-					case @data[:tick_type ] 
-											when 0
-												# do nothing
-											when 1, 2 # Last, AllLast
-							load_map	[ :price, :decimal ]	,
-												[ :size, :int ] ,
-												[ :mask, :int ]	,  		
-												[ :exchange, :string ], 
-												[ :special_conditions, :string ]
-											when 3  # bid/ask
-							load_map  [ :bid_price, :decimal ],
-												[ :ask_price, :decimal],
-												[ :bid_size, :int ],
-												[ :ask_size, :int] ,
-												[ :mask, :int  ]	
-											when 4
-							load_map	[ :mid_point, :decimal ]
-											end
+        def load
+          super
+          case @data[:tick_type ] 
+                      when 0
+                        # do nothing
+                      when 1, 2 # Last, AllLast
+              load_map  [ :price, :decimal ]  ,
+                        [ :size, :int ] ,
+                        [ :mask, :int ]  ,      
+                        [ :exchange, :string ], 
+                        [ :special_conditions, :string ]
+                      when 3  # bid/ask
+              load_map  [ :bid_price, :decimal ],
+                        [ :ask_price, :decimal],
+                        [ :bid_size, :int ],
+                        [ :ask_size, :int] ,
+                        [ :mask, :int  ]  
+                      when 4
+              load_map  [ :mid_point, :decimal ]
+                      end
 
-					@out_labels = case @data[ :tick_tpye ]
-											when 1, 2
-												[ "PastLimit", "Unreported" ]
-												when 3 
-												[ "BitPastLow", "BidPastHigh" ]
-												else
-													[]
-												end	
-				end 
-				def to_human
-					"< TickByTick:" + 	case @data[ :tick_type ]
-					when 1,2
-						"(Last) #{size} @ #{price} [#{exchange}] "
-					when 3
-						"(Bid/Ask) #{bid_size} @ #{bid_price} / #{ask_size } @ #{ask_price} "
-					when 4
-						"(Midpoint)  #{mid_point } "
-					else
-						""
-					end +  @out_labels.zip(resolve_mask).join( "/" )
-				end
+          @out_labels = case @data[ :tick_tpye ]
+                      when 1, 2
+                        [ "PastLimit", "Unreported" ]
+                        when 3 
+                        [ "BitPastLow", "BidPastHigh" ]
+                        else
+                          []
+                        end  
+        end 
+        def to_human
+          "< TickByTick:" +   case @data[ :tick_type ]
+          when 1,2
+            "(Last) #{size} @ #{price} [#{exchange}] "
+          when 3
+            "(Bid/Ask) #{bid_size} @ #{bid_price} / #{ask_size } @ #{ask_price} "
+          when 4
+            "(Midpoint)  #{mid_point } "
+          else
+            ""
+          end +  @out_labels.zip(resolve_mask).join( "/" )
+        end
 
-				[:price, :size, :mask, :exchange, :specialConditions, :bid_price, :ask_price, :bid_size, :ask_size, :mid_point].each do |name|
-					define_method name do
-						@data[name]
-					end
-				end
-			#	def method_missing method, *args
-			#		if @data.keys.include? method
-			#			@data[method]
-			#		else
-			#			error "method #{method} not known"
-			#		end
-			#	end
-			end
+        [:price, :size, :mask, :exchange, :specialConditions, :bid_price, :ask_price, :bid_size, :ask_size, :mid_point].each do |name|
+          define_method name do
+            @data[name]
+          end
+        end
+      #  def method_missing method, *args
+      #    if @data.keys.include? method
+      #      @data[method]
+      #    else
+      #      error "method #{method} not known"
+      #    end
+      #  end
+      end
     end # module Incoming
   end # module Messages
 end # module IB
