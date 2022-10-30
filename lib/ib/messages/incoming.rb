@@ -162,6 +162,7 @@ module IB
       require 'ib/messages/incoming/real_time_bar'
       require 'ib/messages/incoming/scanner_data'
       require 'ib/messages/incoming/ticks'
+      require 'ib/messages/incoming/historical_ticks'
 
     end # module Incoming
   end # module Messages
