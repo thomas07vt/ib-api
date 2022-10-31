@@ -24,7 +24,7 @@ module IB
       # end
 
 
-      HistoricalTick = def_message [96, 0], AbstractTick,
+      HistoricalTick = def_message [96, 0],
         [:time, :int_date],
         [:mask, :int],
         [:price, :decimal],
@@ -36,7 +36,7 @@ module IB
       # historicalTick.price = decode(float, fields)
       # historicalTick.size = decode(int, fields)
       # ticks.append(historicalTick)
-      HistoricalTickBidAsk = def_message [97, 0], AbstractHistoricalTick,
+      HistoricalTickBidAsk = def_message [97, 0],
         [:time, :int_date],
         [:mask, :int],
         [:bid_price, :decimal],
