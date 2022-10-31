@@ -24,7 +24,7 @@ module IB
       # end
 
 
-      HistoricalTick = def_message [96, 0],
+      HistoricalTicks = def_message [96, 0],
         [:time, :int_date],
         [:mask, :int],
         [:price, :decimal],
@@ -36,7 +36,7 @@ module IB
       # historicalTick.price = decode(float, fields)
       # historicalTick.size = decode(int, fields)
       # ticks.append(historicalTick)
-      HistoricalTickBidAsk = def_message [97, 0],
+      HistoricalTicksBidAsk = def_message [97, 0],
         [:time, :int_date],
         [:mask, :int],
         [:bid_price, :decimal],
@@ -96,7 +96,7 @@ module IB
         # [:exchange, :string],
         # [:special_conditions, :string]
 
-      class HistoricalTickLast
+      class HistoricalTicksLast
         attr_accessor :ticks
 
         using IBSupport  # extended Array-Class  from abstract_message
