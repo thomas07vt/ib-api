@@ -5,23 +5,23 @@ module IB
   module Messages
     module Incoming
 
-      class AbstractHistoricalTick < AbstractMessage
-        # Returns Symbol with a meaningful name for received tick type
-        def type
-          TICK_TYPES[@data[:tick_type]]
-        end
+      # class AbstractHistoricalTick < AbstractMessage
+      #   # Returns Symbol with a meaningful name for received tick type
+      #   def type
+      #     TICK_TYPES[@data[:tick_type]]
+      #   end
 
-        def to_human
-          "<#{self.message_type} #{type}:" +
-              @data.map do |key, value|
-                " #{key} #{value}" unless [:version, :ticker_id, :tick_type].include?(key)
-              end.compact.join('",') + " >"
-        end
+      #   def to_human
+      #     "<#{self.message_type} #{type}:" +
+      #         @data.map do |key, value|
+      #           " #{key} #{value}" unless [:version, :ticker_id, :tick_type].include?(key)
+      #         end.compact.join('",') + " >"
+      #   end
 
-        def the_data
-          @data.reject{|k,_| [:version, :ticker_id].include? k }
-        end
-      end
+      #   def the_data
+      #     @data.reject{|k,_| [:version, :ticker_id].include? k }
+      #   end
+      # end
 
 
       HistoricalTick = def_message [96, 0], AbstractTick,
@@ -36,7 +36,7 @@ module IB
       # historicalTick.price = decode(float, fields)
       # historicalTick.size = decode(int, fields)
       # ticks.append(historicalTick)
-      HistoricalTickBidAsk = def_message [97, 0], AbstractTick,
+      HistoricalTickBidAsk = def_message [97, 0], AbstractHistoricalTick,
         [:time, :int_date],
         [:mask, :int],
         [:bid_price, :decimal],
@@ -57,20 +57,63 @@ module IB
       # historicalTickBidAsk.sizeAsk = decode(int, fields)
       # ticks.append(historicalTickBidAsk)
 
-      HistoricalTickLast = def_message [98, 0], AbstractTick,
-        [:time, :int_date],
-        [:mask, :int],
-        [:price, :decimal],
-        [:size, :int],
-        [:exchange, :string],
-        [:special_conditions, :string]
 
-      class HistoricalTick
+
+
+      # def processHistoricalTicksLast(self, fields):
+      #     next(fields)
+      #     reqId = decode(int, fields)
+      #     tickCount = decode(int, fields)
+
+      #     ticks = []
+
+      #     for _ in range(tickCount):
+      #         historicalTickLast = HistoricalTickLast()
+      #         historicalTickLast.time = decode(int, fields)
+      #         mask = decode(int, fields)
+      #         tickAttribLast = TickAttribLast()
+      #         tickAttribLast.pastLimit = mask & 1 != 0
+      #         tickAttribLast.unreported = mask & 2 != 0
+      #         historicalTickLast.tickAttribLast = tickAttribLast
+      #         historicalTickLast.price = decode(float, fields)
+      #         historicalTickLast.size = decode(int, fields)
+      #         historicalTickLast.exchange = decode(str, fields)
+      #         historicalTickLast.specialConditions = decode(str, fields)
+      #         ticks.append(historicalTickLast)
+
+      #     done = decode(bool, fields)
+
+      #     self.wrapper.historicalTicksLast(reqId, ticks, done)
+
+
+      HistoricalTicksLast = def_message [98, 0],
+        [:request_id, :int],
+        [:tick_count, :int]
+        # [:time, :int_date],
+        # [:mask, :int],
+        # [:price, :decimal],
+        # [:size, :int],
+        # [:exchange, :string],
+        # [:special_conditions, :string]
+
+      class HistoricalTickLast
+        attr_accessor :ticks
+
         using IBSupport  # extended Array-Class  from abstract_message
 
         def load
           super
-          load_map  [:mid_point, :decimal]
+          @ticks = []
+          @data[:tick_count].times do |_|
+            @ticks << IB::TickLast.new(
+              :time => buffer.read_int_date,
+              :mask => buffer.read_int,
+              :price => buffer.read_decimal,
+              :size => buffer.read_int,
+              :exchange => buffer.read_string,
+              :special_conditions => buffer.read_string
+            )
+          end
         end
       end
 
